@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Map and Chat</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #ffeb3b; /* Yellow background */
+    }
+    h1, h2 {
+      text-align: center;
+      color: #444;
+    }
+    form {
+      text-align: center;
+      margin: 20px;
+    }
+    #mapContainer {
+      width: 90%;
+      height: 500px;
+      margin: 20px auto;
+      border: 2px solid #ffcc00;
+      border-radius: 10px;
+    }
+    #chatContainer {
+      width: 90%;
+      margin: 20px auto;
+      border: 2px solid #444;
+      border-radius: 10px;
+      background-color: #fff;
+      padding: 10px;
+    }
+    #chatBox {
+      height: 200px;
+      overflow-y: auto;
+      border: 1px solid #ccc;
+      margin-bottom: 10px;
+      padding: 5px;
+    }
+    #messageInput {
+      width: 80%;
+      padding: 10px;
+      margin-right: 10px;
+    }
+    #sendButton {
+      padding: 10px 20px;
+      background-color: #444;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    #sendButton:hover {
+      background-color: #666;
+    }
+  </style>
+</head>
+<body>
+  <h1>User Map & Global Chat</h1>
+  
+  <!-- Registration Form -->
+  <form id="registrationForm">
+    <label>Username: <input type="text" id="username" required></label>
+    <label>Password: <input type="password" id="password" required></label>
+    <label>Profile Picture: <input type="file" id="profilePicture" accept="image/*"></label>
+    <button type="submit">Register</button>
+  </form>
+
+  <!-- Map Section -->
+  <h2>User Map</h2>
+  <div id="mapContainer"></div>
+
+  <!-- Chat Section -->
+  <h2>Global Chat</h2>
+  <div id="chatContainer">
+    <div id="chatBox"></div>
+    <input type="text" id="messageInput" placeholder="Type your message..." />
+    <button id="sendButton">Send</button>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const users = []; // Array to store user data
+    const chatMessages = []; // Array to store chat messages
+
+    // Initialize the map
+    const map = L.map('mapContainer').setView([23.6850, 90.3563], 7); // Centered on Bangladesh
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+    }).addTo(map);
+
+    // Handle registration
+    document.getElementById('registrationForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      const profilePicture = document.getElementById('profilePicture').files[0];
+
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition((position) => {
+          const user = {
+            username,
+            password,
+            profilePicture: profilePicture ? URL.createObjectURL(profilePicture) : null,
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          };
+          users.push(user);
+          addUserToMap(user);
+          alert('User registered successfully!');
+        });
+      } else {
+        alert('Geolocation is not supported by this browser.');
+      }
+    });
+
+    // Add user to the map
+    function addUserToMap(user) {
+      const marker = L.marker([user.lat, user.lng]).addTo(map);
+      const profileImg = user.profilePicture ? `<img src="${user.profilePicture}" style="width:50px;height:50px;border-radius:50%;">` : '';
+      marker.bindPopup(`<strong>${user.username}</strong><br>${profileImg}`).openPopup();
+    }
+
+    // Handle chat
+    document.getElementById('sendButton').addEventListener('click', function () {
+      const message = document.getElementById('messageInput').value.trim();
+      if (message) {
+        const username = users[0]?.username || 'Anonymous';
+        const chatMessage = `${username}: ${message}`;
+        chatMessages.push(chatMessage);
+        updateChatBox();
+        document.getElementById('messageInput').value = '';
+      }
+    });
+
+    // Update chat box
+    function updateChatBox() {
+      const chatBox = document.getElementById('chatBox');
+      chatBox.innerHTML = chatMessages.map(msg => `<div>${msg}</div>`).join('');
+      chatBox.scrollTop = chatBox.scrollHeight; // Scroll to the bottom
+    }
+  </script>
+</body>
+</html>
